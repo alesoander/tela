@@ -6,7 +6,7 @@ pkgrel=1
 pkgdesc="Notas privadas superpuestas para presentar compartiendo pantalla (Hyprland/Wayland)"
 arch=('x86_64' 'aarch64')
 license=('unknown')
-depends=('poppler-glib' 'cairo' 'glib2' 'wayland' 'libxkbcommon' 'fontconfig')
+depends=('poppler-glib' 'cairo' 'glib2' 'wayland' 'libxkbcommon' 'fontconfig' 'gtk4')
 makedepends=('cargo' 'pkgconf')
 optdepends=('libreoffice-fresh: abrir presentaciones PPT/PPTX/ODP'
             'libreoffice-still: abrir presentaciones PPT/PPTX/ODP')
@@ -28,5 +28,6 @@ check() {
 
 package() {
   install -Dm755 "$srcdir/target/release/tela" "$pkgdir/usr/bin/tela"
+  install -Dm755 "$srcdir/target/release/tela-gui" "$pkgdir/usr/bin/tela-gui"
   install -Dm644 "$_root/README.md" "$pkgdir/usr/share/doc/tela/README.md"
 }

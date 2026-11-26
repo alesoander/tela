@@ -51,6 +51,21 @@ impl Ink {
         }
     }
 
+    /// Nombre estable para guardar en la configuración.
+    pub fn id(self) -> &'static str {
+        match self {
+            Ink::Dark => "oscura",
+            Ink::Light => "clara",
+            Ink::Off => "pagina",
+        }
+    }
+
+    pub fn from_id(id: &str) -> Option<Ink> {
+        [Ink::Dark, Ink::Light, Ink::Off]
+            .into_iter()
+            .find(|i| i.id() == id)
+    }
+
     pub fn label(self) -> &'static str {
         match self {
             Ink::Dark => "tinta oscura",

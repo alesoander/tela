@@ -8,6 +8,7 @@ pub const HELP: &str = "\
 tela — notas privadas superpuestas para presentar compartiendo pantalla (Hyprland/Wayland)
 
 USO:
+    tela                                         Abrir el lanzador (interfaz gráfica)
     tela <presentación> [--notas <archivo>] [opciones]
 
   <presentación> y <archivo de notas> pueden ser .pdf o .ppt/.pptx/.odp
@@ -66,7 +67,7 @@ pub fn parse() -> Result<Parsed, String> {
     parse_from(std::env::args().skip(1))
 }
 
-fn parse_from(mut it: impl Iterator<Item = String>) -> Result<Parsed, String> {
+pub(crate) fn parse_from(mut it: impl Iterator<Item = String>) -> Result<Parsed, String> {
     let mut slides = None;
     let mut notes = None;
     let mut offset = 0i32;
@@ -155,7 +156,7 @@ fn parse_opacity(v: &str) -> Result<f32, String> {
 }
 
 /// Busca `<nombre>.notas.pdf`, `<nombre>-notas.pdf` o `<nombre>_notas.pdf` junto a la presentación.
-fn find_notes(slides: &Path) -> Option<PathBuf> {
+pub fn find_notes(slides: &Path) -> Option<PathBuf> {
     let stem = slides.file_stem()?.to_str()?;
     let dir = slides.parent().unwrap_or(Path::new(""));
     ["pdf", "pptx", "ppt", "odp"].iter().find_map(|ext| {

@@ -38,7 +38,7 @@ En Linux no hay una forma universal de "ocultar una ventana de la captura" como 
 Dependencias:
 
 ```bash
-sudo pacman -S --needed rust pkgconf poppler-glib cairo wayland libxkbcommon xdg-desktop-portal-hyprland
+sudo pacman -S --needed rust pkgconf poppler-glib cairo wayland libxkbcommon gtk4 xdg-desktop-portal-hyprland
 ```
 
 Para abrir `.ppt` / `.pptx` / `.odp` directamente (opcional):
@@ -60,6 +60,29 @@ cargo install --path .
 ```
 
 ## Uso
+
+### Con el lanzador (recomendado)
+
+Ejecuta `tela` sin argumentos (o `tela-gui charla.pdf` para abrirlo con esa presentación ya elegida):
+
+```bash
+tela
+```
+
+1. **Presentación** → «Elegir…» (o arrastra el archivo sobre la vista previa izquierda).
+   Si hay un `charla.notas.pdf` junto a ella, las notas se eligen solas.
+2. **Notas** → «Elegir…» (o arrastra el PDF sobre la vista previa derecha).
+3. Recorre la **vista previa lado a lado** con las flechas (o `RePág`/`AvPág`) y comprueba que
+   cada nota corresponde a su diapositiva. Si van corridas, cambia el **desfase** y lo verás al
+   instante.
+4. Ajusta opacidad, tinta, monitor y pulsa **Presentar** (`Ctrl+Intro`).
+
+Los ajustes se guardan **por presentación** en `~/.config/tela/presentaciones.conf`: la próxima
+vez que elijas el mismo archivo se recuperan sus notas, desfase, opacidad, tinta y monitor.
+Al presentar, el lanzador se reemplaza por la presentación, así que no consume nada mientras
+presentas.
+
+### Desde la terminal
 
 ```bash
 tela charla.pdf --notas charla-notas.pdf
@@ -150,7 +173,9 @@ de tu versión.)
 
 | Archivo | Qué hace |
 |---|---|
-| `src/main.rs` | Arranque y errores |
+| `src/main.rs` | Binario `tela`: arranque y errores; sin argumentos abre el lanzador |
+| `src/bin/tela-gui.rs` | Lanzador GTK4: archivos, vista previa lado a lado, opciones; hace `exec` a `tela` |
+| `src/settings.rs` | Ajustes recordados por presentación |
 | `src/args.rs` | Línea de comandos (sin dependencias) |
 | `src/convert.rs` | PPT/PPTX/ODP → PDF con LibreOffice headless, con caché y perfil propio |
 | `src/render.rs` | Hilo de render con poppler + cairo; cola de prioridad (actual → siguiente), modos de tinta |

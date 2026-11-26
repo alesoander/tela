@@ -8,6 +8,7 @@ description = "Notas privadas superpuestas para presentar compartiendo pantalla 
 [dependencies]
 cairo-rs = "0.22.11"
 glib = "0.22"
+gtk = { version = "0.11", package = "gtk4", features = ["v4_10"] }
 libc = "0.2.191"
 poppler-rs = "0.26"
 smithay-client-toolkit = { version = "0.21", default-features = false, features = ["calloop", "xkbcommon"] }
