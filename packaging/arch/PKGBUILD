@@ -1,0 +1,32 @@
+# Compila tela desde este repositorio local:
+#   cd packaging/arch && makepkg -si
+pkgname=tela
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Notas privadas superpuestas para presentar compartiendo pantalla (Hyprland/Wayland)"
+arch=('x86_64' 'aarch64')
+license=('unknown')
+depends=('poppler-glib' 'cairo' 'glib2' 'wayland' 'libxkbcommon' 'fontconfig')
+makedepends=('cargo' 'pkgconf')
+optdepends=('libreoffice-fresh: abrir presentaciones PPT/PPTX/ODP'
+            'libreoffice-still: abrir presentaciones PPT/PPTX/ODP')
+options=('!lto')
+
+_root="$(realpath "$startdir/../..")"
+
+build() {
+  cd "$_root"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  cargo build --release --locked
+}
+
+check() {
+  cd "$_root"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  cargo test --release --locked
+}
+
+package() {
+  install -Dm755 "$srcdir/target/release/tela" "$pkgdir/usr/bin/tela"
+  install -Dm644 "$_root/README.md" "$pkgdir/usr/share/doc/tela/README.md"
+}
