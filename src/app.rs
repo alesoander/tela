@@ -188,15 +188,7 @@ impl Paint {
             eprintln!("tela: no se pudo reservar memoria para {w}x{h}");
             return;
         };
-        let row = w as usize * 4;
-        let src = img.bytes();
-        if img.stride == row {
-            canvas.copy_from_slice(&src[..canvas.len()]);
-        } else {
-            for (y, dst) in canvas.chunks_exact_mut(row).enumerate() {
-                dst.copy_from_slice(&src[y * img.stride..][..row]);
-            }
-        }
+        copy_rows(img.bytes(), img.stride, canvas, w as usize * 4, h as usize);
         self.cache.insert(0, (img.key, buffer));
         // En pantallas grandes (4K: ~33 MB por página) se guardan solo actual y siguiente.
         let cap = if canvas_bytes(w, h) > LARGE_PAGE {
@@ -286,6 +278,21 @@ impl Drop for LayerBuf {
     }
 }
 
+/// Copia `h` filas de `row` bytes de `src` (con stride `src_stride`) al principio de `dst`.
+///
+/// `dst` puede ser más grande que la imagen: sctk redondea cada búfer a múltiplos de 64 bytes,
+/// así que nunca se usa `dst.len()` como tamaño de la imagen.
+fn copy_rows(src: &[u8], src_stride: usize, dst: &mut [u8], row: usize, h: usize) {
+    let dst = &mut dst[..row * h];
+    if src_stride == row {
+        dst.copy_from_slice(&src[..row * h]);
+    } else {
+        for (y, d) in dst.chunks_exact_mut(row).enumerate() {
+            d.copy_from_slice(&src[y * src_stride..][..row]);
+        }
+    }
+}
+
 /// Crea un búfer (del tamaño físico de la superficie o `size`), lo rellena y hace commit.
 fn present(
     pool: &mut SlotPool,
@@ -301,7 +308,8 @@ fn present(
         eprintln!("tela: no se pudo reservar memoria para {w}x{h}");
         return false;
     };
-    fill(canvas, w, h);
+    // El lienzo de sctk puede traer relleno al final; se entrega con el tamaño exacto.
+    fill(&mut canvas[..w as usize * h as usize * 4], w, h);
     scale.apply(surface);
     surface.damage_buffer(0, 0, w as i32, h as i32);
     if buffer.attach_to(surface).is_err() {
@@ -1166,10 +1174,7 @@ fn draw_hud_text(
     surface.flush();
     let stride = surface.stride() as usize;
     if let Ok(data) = surface.data() {
-        let row = w as usize * 4;
-        for (y, dst) in canvas.chunks_exact_mut(row).enumerate() {
-            dst.copy_from_slice(&data[y * stride..y * stride + row]);
-        }
+        copy_rows(&data, stride, canvas, w as usize * 4, h as usize);
     }
 }
 
@@ -1541,3 +1546,33 @@ no_events!(
     WpAlphaModifierV1,
     WpAlphaModifierSurfaceV1
 );
+
+#[cfg(test)]
+mod tests {
+    use super::copy_rows;
+
+    #[test]
+    fn copy_into_padded_buffer() {
+        // Imagen de 3×2 px (fila de 12 bytes) en un búfer redondeado a 64 bytes, como hace sctk.
+        let src: Vec<u8> = (0..24).collect();
+        let mut dst = vec![0xAAu8; 64];
+        copy_rows(&src, 12, &mut dst, 12, 2);
+        assert_eq!(&dst[..24], &src[..]);
+        assert!(
+            dst[24..].iter().all(|b| *b == 0xAA),
+            "el relleno no se toca"
+        );
+    }
+
+    #[test]
+    fn copy_with_wider_source_stride() {
+        // Origen con stride de 16 bytes (4 de relleno por fila).
+        let mut src = vec![0u8; 32];
+        src[..12].copy_from_slice(&[1; 12]);
+        src[16..28].copy_from_slice(&[2; 12]);
+        let mut dst = vec![0u8; 64];
+        copy_rows(&src, 16, &mut dst, 12, 2);
+        assert_eq!(&dst[..12], &[1; 12]);
+        assert_eq!(&dst[12..24], &[2; 12]);
+    }
+}
